@@ -1,0 +1,20 @@
+name: setup
+on:
+  workflow_call:
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: clone
+        uses: actions/checkout@v4
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: init
+        run: terraform init
+      - run: terraform validate
+      - run: terraform fmt
+      - name: upload configurations
+        uses: actions/upload-artifact@v4
+        with:  
+          name: main.tf
+          path: ./*
