@@ -1,0 +1,49 @@
+name: terraform runs
+
+on:
+  push
+permissions:
+      id-token: write
+      contents: read   
+jobs: 
+  startup:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Starting terraform run"
+  init:
+     needs: startup
+     uses: ./.github/workflows/setup.yaml    
+    
+  plan:
+     if: success()
+     needs: init
+     runs-on: ubuntu-latest
+     strategy:
+       fail-fast: false
+       matrix:
+         envi: [ dev, stage, prod ]
+     steps:
+     - name: download artifacts
+       uses: actions/download-artifact@v4
+       with:
+         name: main.tf
+     - name: Aws creds
+       uses: aws-actions/configure-aws-credentials@v4
+       with:
+         role-to-assume: ${{ secrets.CI_ROLE }}
+         aws-region: "us-west-2"
+     - name: download terraform
+       uses: hashicorp/setup-terraform@v3
+       with:
+          terraform_version: 1.1.9
+     - run: |
+          ls
+          terraform init
+          terraform plan
+  
+  apply:
+     needs: plan
+     runs-on: ubuntu-latest
+     steps:
+      - name: apply
+        run: terraform plan
